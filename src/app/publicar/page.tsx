@@ -11,18 +11,24 @@ import {
   UserPlus,
   ImagePlus,
   X,
+  Loader2,
 } from "lucide-react";
 import Link from "next/link";
 import { provincias } from "@/data/costarica";
 import { useAuth } from "@/context/AuthContext";
+import { supabase } from "@/lib/supabase";
 
 export default function PublicarPage() {
-  const { isLoggedIn } = useAuth();
+  const { isLoggedIn, user } = useAuth();
   const [provincia, setProvincia] = useState("");
   const [canton, setCanton] = useState("");
   const [distrito, setDistrito] = useState("");
+  const [contenido, setContenido] = useState("");
   const [submitted, setSubmitted] = useState(false);
-  const [foto, setFoto] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState("");
+  const [foto, setFoto] = useState<File | null>(null);
+  const [fotoPreview, setFotoPreview] = useState<string | null>(null);
   const fotoRef = useRef<HTMLInputElement>(null);
 
   const selectedProvincia = provincias.find((p) => p.nombre === provincia);
@@ -33,9 +39,55 @@ export default function PublicarPage() {
   const handleFoto = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    setFoto(file);
     const reader = new FileReader();
-    reader.onload = () => setFoto(reader.result as string);
+    reader.onload = () => setFotoPreview(reader.result as string);
     reader.readAsDataURL(file);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!user) return;
+    setError("");
+    setSubmitting(true);
+
+    let imagenUrl: string | null = null;
+
+    // Upload photo if provided
+    if (foto) {
+      const timestamp = Date.now();
+      const ext = foto.name.split(".").pop() || "jpg";
+      const { data, error: uploadError } = await supabase.storage
+        .from("posts")
+        .upload(`${user.id}/${timestamp}.${ext}`, foto, { upsert: true });
+
+      if (uploadError) {
+        console.error("Photo upload error:", uploadError);
+      } else if (data) {
+        const { data: urlData } = supabase.storage.from("posts").getPublicUrl(data.path);
+        imagenUrl = urlData.publicUrl;
+      }
+    }
+
+    // Insert post
+    const { error: insertError } = await supabase.from("posts").insert({
+      autor_id: user.id,
+      contenido,
+      imagen: imagenUrl,
+      provincia,
+      canton,
+      distrito,
+    });
+
+    if (insertError) {
+      setError("Error al publicar. Intentá de nuevo.");
+      console.error("Post insert error:", insertError);
+      setSubmitting(false);
+      return;
+    }
+
+    setSubmitted(true);
+    setSubmitting(false);
   };
 
   if (!isLoggedIn) {
@@ -87,15 +139,28 @@ export default function PublicarPage() {
         <p className="text-text-secondary">
           Tu experiencia ya está visible para la comunidad.
         </p>
-        <button
-          onClick={() => {
-            setSubmitted(false);
-            setFoto(null);
-          }}
-          className="mt-6 px-6 py-2.5 bg-primary text-white rounded-xl text-sm font-medium hover:bg-primary-dark transition-colors"
-        >
-          Publicar otra experiencia
-        </button>
+        <div className="flex gap-3 justify-center mt-6">
+          <button
+            onClick={() => {
+              setSubmitted(false);
+              setFoto(null);
+              setFotoPreview(null);
+              setContenido("");
+              setProvincia("");
+              setCanton("");
+              setDistrito("");
+            }}
+            className="px-6 py-2.5 bg-primary text-white rounded-xl text-sm font-medium hover:bg-primary-dark transition-colors"
+          >
+            Publicar otra experiencia
+          </button>
+          <Link
+            href="/explorar"
+            className="px-6 py-2.5 border border-border rounded-xl text-sm font-medium text-text-secondary hover:border-primary/30 hover:text-primary transition-all"
+          >
+            Ver experiencias
+          </Link>
+        </div>
       </div>
     );
   }
@@ -112,12 +177,16 @@ export default function PublicarPage() {
       </div>
 
       <form
-        onSubmit={(e) => {
-          e.preventDefault();
-          setSubmitted(true);
-        }}
+        onSubmit={handleSubmit}
         className="bg-white rounded-2xl border border-border p-6 sm:p-8 shadow-sm space-y-5"
       >
+        {error && (
+          <div className="flex items-center gap-2 p-3 bg-danger/5 border border-danger/20 rounded-xl">
+            <AlertCircle className="w-4 h-4 text-danger shrink-0" />
+            <p className="text-xs text-danger font-medium">{error}</p>
+          </div>
+        )}
+
         <div className="p-3 bg-amber-50 rounded-xl border border-amber-200">
           <div className="flex items-start gap-2">
             <AlertCircle className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
@@ -136,11 +205,13 @@ export default function PublicarPage() {
             required
             rows={5}
             maxLength={500}
+            value={contenido}
+            onChange={(e) => setContenido(e.target.value)}
             placeholder="Contanos tu experiencia..."
             className="w-full px-4 py-3 bg-surface-alt border border-border rounded-xl text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
           />
           <p className="text-xs text-text-muted mt-1 text-right">
-            Máximo 500 caracteres
+            {contenido.length}/500
           </p>
         </div>
 
@@ -157,10 +228,10 @@ export default function PublicarPage() {
             className="hidden"
             onChange={handleFoto}
           />
-          {foto ? (
+          {fotoPreview ? (
             <div className="relative rounded-xl overflow-hidden">
               <img
-                src={foto}
+                src={fotoPreview}
                 alt="Preview"
                 className="w-full h-48 object-cover rounded-xl"
               />
@@ -168,6 +239,7 @@ export default function PublicarPage() {
                 type="button"
                 onClick={() => {
                   setFoto(null);
+                  setFotoPreview(null);
                   if (fotoRef.current) fotoRef.current.value = "";
                 }}
                 className="absolute top-2 right-2 w-8 h-8 bg-black/50 backdrop-blur-sm rounded-full flex items-center justify-center text-white hover:bg-black/70 transition-colors"
@@ -251,10 +323,15 @@ export default function PublicarPage() {
 
         <button
           type="submit"
-          className="w-full py-3 bg-gradient-to-r from-primary to-primary-dark text-white font-semibold rounded-xl hover:shadow-lg hover:shadow-primary/25 transition-all text-sm flex items-center justify-center gap-2"
+          disabled={submitting}
+          className="w-full py-3 bg-gradient-to-r from-primary to-primary-dark text-white font-semibold rounded-xl hover:shadow-lg hover:shadow-primary/25 transition-all text-sm flex items-center justify-center gap-2 disabled:opacity-60"
         >
-          <Send className="w-4 h-4" />
-          Publicar experiencia
+          {submitting ? (
+            <Loader2 className="w-4 h-4 animate-spin" />
+          ) : (
+            <Send className="w-4 h-4" />
+          )}
+          {submitting ? "Publicando..." : "Publicar experiencia"}
         </button>
       </form>
     </div>

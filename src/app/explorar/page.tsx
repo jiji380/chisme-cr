@@ -1,14 +1,28 @@
 "use client";
 
-import { useState, useMemo, Suspense } from "react";
-import { Search, Lock, LogIn, UserPlus } from "lucide-react";
+import { useState, useEffect, useMemo, Suspense } from "react";
+import { Search, Lock, LogIn, UserPlus, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { PostCard } from "@/components/PostCard";
 import { LocationFilter } from "@/components/LocationFilter";
 import { AdBanner } from "@/components/AdBanner";
-import { mockPosts } from "@/data/mock-posts";
 import { useAuth } from "@/context/AuthContext";
+import { supabase } from "@/lib/supabase";
+
+interface PostWithAuthor {
+  id: string;
+  autorId: string;
+  autor: string;
+  contenido: string;
+  imagen: string | null;
+  provincia: string;
+  canton: string;
+  distrito: string;
+  fecha: string;
+  likes: number;
+  comentarios: never[];
+}
 
 export default function ExplorarPage() {
   return (
@@ -26,9 +40,57 @@ function ExplorarContent() {
   const [canton, setCanton] = useState("");
   const [distrito, setDistrito] = useState("");
   const [busqueda, setBusqueda] = useState("");
+  const [posts, setPosts] = useState<PostWithAuthor[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchPosts();
+  }, []);
+
+  const fetchPosts = async () => {
+    setLoading(true);
+    const { data, error } = await supabase
+      .from("posts")
+      .select("id, autor_id, contenido, imagen, provincia, canton, distrito, fecha, likes, created_at")
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      console.error("Error fetching posts:", error);
+      setLoading(false);
+      return;
+    }
+
+    if (data && data.length > 0) {
+      const autorIds = [...new Set(data.map((p) => p.autor_id))];
+      const { data: profiles } = await supabase
+        .from("profiles")
+        .select("id, seudonimo")
+        .in("id", autorIds);
+
+      const profileMap = new Map(profiles?.map((p) => [p.id, p.seudonimo]) || []);
+
+      const enriched: PostWithAuthor[] = data.map((p) => ({
+        id: p.id,
+        autorId: p.autor_id,
+        autor: profileMap.get(p.autor_id) || "Anónimo",
+        contenido: p.contenido,
+        imagen: p.imagen,
+        provincia: p.provincia,
+        canton: p.canton,
+        distrito: p.distrito,
+        fecha: p.fecha || p.created_at,
+        likes: p.likes || 0,
+        comentarios: [],
+      }));
+
+      setPosts(enriched);
+    }
+
+    setLoading(false);
+  };
 
   const filteredPosts = useMemo(() => {
-    return mockPosts.filter((post) => {
+    return posts.filter((post) => {
       if (provincia && post.provincia !== provincia) return false;
       if (canton && post.canton !== canton) return false;
       if (distrito && post.distrito !== distrito) return false;
@@ -40,7 +102,7 @@ function ExplorarContent() {
         return false;
       return true;
     });
-  }, [provincia, canton, distrito, busqueda]);
+  }, [posts, provincia, canton, distrito, busqueda]);
 
   const visiblePosts = isLoggedIn ? filteredPosts : filteredPosts.slice(0, 2);
   const blurredPosts = isLoggedIn ? [] : filteredPosts.slice(2);
@@ -98,11 +160,15 @@ function ExplorarContent() {
             )}
           </div>
 
-          {filteredPosts.length > 0 ? (
+          {loading ? (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="w-6 h-6 animate-spin text-primary" />
+            </div>
+          ) : filteredPosts.length > 0 ? (
             <div className="space-y-4">
               {visiblePosts.map((post, i) => (
                 <div key={post.id}>
-                  <PostCard post={post} />
+                  <PostCard post={post as never} />
                   {i === 2 && <AdBanner position="inline" />}
                 </div>
               ))}
@@ -111,7 +177,7 @@ function ExplorarContent() {
                 <div className="relative">
                   <div className="space-y-4 blur-sm pointer-events-none select-none">
                     {blurredPosts.slice(0, 3).map((post) => (
-                      <PostCard key={post.id} post={post} />
+                      <PostCard key={post.id} post={post as never} />
                     ))}
                   </div>
 
@@ -157,7 +223,9 @@ function ExplorarContent() {
                 No se encontraron experiencias
               </h3>
               <p className="text-sm text-text-muted max-w-sm mx-auto">
-                Intentá cambiar los filtros o buscá con otras palabras clave
+                {posts.length === 0
+                  ? "Aún no hay experiencias publicadas. ¡Sé la primera en compartir!"
+                  : "Intentá cambiar los filtros o buscá con otras palabras clave"}
               </p>
             </div>
           )}
