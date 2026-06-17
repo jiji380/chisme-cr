@@ -19,7 +19,6 @@ export interface Post {
   fecha: string;
   likes: number;
   comentarios: Comment[];
-  categoria: "amistad" | "pareja" | "trabajo" | "comunidad" | "otro";
 }
 
 export type BadgeType =

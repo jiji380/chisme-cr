@@ -6,7 +6,6 @@ import {
   MessageCircle,
   MapPin,
   Calendar,
-  Tag,
   Flag,
   Send,
   ChevronDown,
@@ -19,21 +18,6 @@ import Link from "next/link";
 import type { Post, Comment } from "@/data/mock-posts";
 import { useAuth } from "@/context/AuthContext";
 
-const categoriaConfig: Record<
-  Post["categoria"],
-  { label: string; color: string; bg: string }
-> = {
-  amistad: { label: "Amistad", color: "text-blue-600", bg: "bg-blue-50" },
-  pareja: { label: "Pareja", color: "text-pink-600", bg: "bg-pink-50" },
-  trabajo: { label: "Trabajo", color: "text-amber-600", bg: "bg-amber-50" },
-  comunidad: {
-    label: "Comunidad",
-    color: "text-green-600",
-    bg: "bg-green-50",
-  },
-  otro: { label: "Otro", color: "text-gray-600", bg: "bg-gray-50" },
-};
-
 const reportReasons = [
   "Contenido inapropiado",
   "Información personal de terceros",
@@ -43,7 +27,6 @@ const reportReasons = [
 ];
 
 export function PostCard({ post }: { post: Post }) {
-  const cat = categoriaConfig[post.categoria];
   const { isLoggedIn } = useAuth();
   const [liked, setLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(post.likes);
@@ -115,12 +98,6 @@ export function PostCard({ post }: { post: Post }) {
                 </div>
               </div>
             </div>
-            <span
-              className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-white/20 backdrop-blur-sm text-white`}
-            >
-              <Tag className="w-2.5 h-2.5" />
-              {cat.label}
-            </span>
           </div>
         </div>
       )}
@@ -153,12 +130,6 @@ export function PostCard({ post }: { post: Post }) {
                 </div>
               </div>
             </div>
-            <span
-              className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium ${cat.color} ${cat.bg}`}
-            >
-              <Tag className="w-3 h-3" />
-              {cat.label}
-            </span>
           </div>
         )}
 

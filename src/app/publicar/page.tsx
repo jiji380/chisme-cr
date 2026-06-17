@@ -4,7 +4,6 @@ import { useState, useRef } from "react";
 import {
   Send,
   MapPin,
-  Tag,
   AlertCircle,
   CheckCircle2,
   Lock,
@@ -127,24 +126,6 @@ export default function PublicarPage() {
               terceros será eliminado.
             </p>
           </div>
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-text mb-1.5">
-            <Tag className="w-4 h-4 inline mr-1" />
-            Categoría
-          </label>
-          <select
-            required
-            className="w-full appearance-none bg-surface-alt border border-border rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
-          >
-            <option value="">Seleccionar categoría</option>
-            <option value="amistad">🤝 Amistad</option>
-            <option value="pareja">💕 Pareja</option>
-            <option value="trabajo">💼 Trabajo</option>
-            <option value="comunidad">🏘️ Comunidad</option>
-            <option value="otro">🌟 Otro</option>
-          </select>
         </div>
 
         <div>

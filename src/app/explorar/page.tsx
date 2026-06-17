@@ -6,7 +6,6 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { PostCard } from "@/components/PostCard";
 import { LocationFilter } from "@/components/LocationFilter";
-import { CategoryFilter } from "@/components/CategoryFilter";
 import { AdBanner } from "@/components/AdBanner";
 import { mockPosts } from "@/data/mock-posts";
 import { useAuth } from "@/context/AuthContext";
@@ -26,7 +25,6 @@ function ExplorarContent() {
   const [provincia, setProvincia] = useState(initialProvincia);
   const [canton, setCanton] = useState("");
   const [distrito, setDistrito] = useState("");
-  const [categoria, setCategoria] = useState("");
   const [busqueda, setBusqueda] = useState("");
 
   const filteredPosts = useMemo(() => {
@@ -34,7 +32,6 @@ function ExplorarContent() {
       if (provincia && post.provincia !== provincia) return false;
       if (canton && post.canton !== canton) return false;
       if (distrito && post.distrito !== distrito) return false;
-      if (categoria && post.categoria !== categoria) return false;
       if (
         busqueda &&
         !post.contenido.toLowerCase().includes(busqueda.toLowerCase()) &&
@@ -43,7 +40,7 @@ function ExplorarContent() {
         return false;
       return true;
     });
-  }, [provincia, canton, distrito, categoria, busqueda]);
+  }, [provincia, canton, distrito, busqueda]);
 
   const visiblePosts = isLoggedIn ? filteredPosts : filteredPosts.slice(0, 2);
   const blurredPosts = isLoggedIn ? [] : filteredPosts.slice(2);
@@ -82,7 +79,6 @@ function ExplorarContent() {
             onCantonChange={setCanton}
             onDistritoChange={setDistrito}
           />
-          <CategoryFilter selected={categoria} onChange={setCategoria} />
           <AdBanner position="sidebar" />
         </aside>
 
@@ -111,7 +107,6 @@ function ExplorarContent() {
                 </div>
               ))}
 
-              {/* Blurred posts for non-logged users */}
               {blurredPosts.length > 0 && (
                 <div className="relative">
                   <div className="space-y-4 blur-sm pointer-events-none select-none">
@@ -120,7 +115,6 @@ function ExplorarContent() {
                     ))}
                   </div>
 
-                  {/* Overlay CTA */}
                   <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-b from-transparent via-white/80 to-white/95">
                     <div className="bg-white rounded-2xl border border-border shadow-xl p-8 text-center max-w-sm mx-4">
                       <div className="w-14 h-14 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
