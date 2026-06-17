@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Heart,
   MessageCircle,
@@ -15,8 +15,29 @@ import {
   CheckCircle2,
 } from "lucide-react";
 import Link from "next/link";
-import type { Post, Comment } from "@/data/mock-posts";
 import { useAuth } from "@/context/AuthContext";
+import { supabase } from "@/lib/supabase";
+
+interface PostData {
+  id: string;
+  autorId: string;
+  autor: string;
+  contenido: string;
+  imagen?: string | null;
+  provincia: string;
+  canton: string;
+  distrito: string;
+  fecha: string;
+  likes: number;
+}
+
+interface CommentData {
+  id: string;
+  autor: string;
+  contenido: string;
+  fecha: string;
+  likes: number;
+}
 
 const reportReasons = [
   "Contenido inapropiado",
@@ -26,41 +47,142 @@ const reportReasons = [
   "Contenido falso o engañoso",
 ];
 
-export function PostCard({ post }: { post: Post }) {
-  const { isLoggedIn } = useAuth();
+export function PostCard({ post }: { post: PostData }) {
+  const { isLoggedIn, user } = useAuth();
   const [liked, setLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(post.likes);
   const [showComments, setShowComments] = useState(false);
-  const [comments, setComments] = useState<Comment[]>(post.comentarios);
+  const [comments, setComments] = useState<CommentData[]>([]);
+  const [commentCount, setCommentCount] = useState(0);
   const [newComment, setNewComment] = useState("");
   const [showReport, setShowReport] = useState(false);
   const [reported, setReported] = useState(false);
 
-  const handleLike = () => {
-    if (!isLoggedIn) return;
-    setLiked(!liked);
-    setLikeCount((prev) => (liked ? prev - 1 : prev + 1));
+  useEffect(() => {
+    if (user) {
+      supabase
+        .from("post_likes")
+        .select("id")
+        .eq("post_id", post.id)
+        .eq("user_id", user.id)
+        .then(({ data }) => {
+          if (data && data.length > 0) setLiked(true);
+        });
+    }
+
+    supabase
+      .from("post_likes")
+      .select("id", { count: "exact", head: true })
+      .eq("post_id", post.id)
+      .then(({ count }) => {
+        if (count !== null) setLikeCount(count);
+      });
+
+    supabase
+      .from("comments")
+      .select("id", { count: "exact", head: true })
+      .eq("post_id", post.id)
+      .then(({ count }) => {
+        if (count !== null) setCommentCount(count);
+      });
+  }, [post.id, user]);
+
+  const handleLike = async () => {
+    if (!isLoggedIn || !user) {
+      console.log("Like blocked: not logged in", { isLoggedIn, user: !!user });
+      return;
+    }
+    console.log("Like attempt:", { postId: post.id, userId: user.id, liked });
+
+    if (liked) {
+      const { error } = await supabase
+        .from("post_likes")
+        .delete()
+        .eq("post_id", post.id)
+        .eq("user_id", user.id);
+      if (error) { console.error("Unlike error:", error); return; }
+      setLiked(false);
+      setLikeCount((prev) => prev - 1);
+    } else {
+      const { error } = await supabase
+        .from("post_likes")
+        .insert({ post_id: post.id, user_id: user.id });
+      if (error) { console.error("Like error:", error); return; }
+      setLiked(true);
+      setLikeCount((prev) => prev + 1);
+    }
   };
 
-  const handleAddComment = () => {
-    if (!newComment.trim() || !isLoggedIn) return;
-    const comment: Comment = {
-      id: `new-${Date.now()}`,
-      postId: post.id,
-      autor: "Vos",
+  const loadComments = async () => {
+    const { data } = await supabase
+      .from("comments")
+      .select("id, autor_id, contenido, fecha, likes")
+      .eq("post_id", post.id)
+      .order("fecha", { ascending: true });
+
+    if (data && data.length > 0) {
+      const autorIds = [...new Set(data.map((c) => c.autor_id))];
+      const { data: profiles } = await supabase
+        .from("profiles")
+        .select("id, seudonimo")
+        .in("id", autorIds);
+
+      const profileMap = new Map(profiles?.map((p) => [p.id, p.seudonimo]) || []);
+
+      setComments(
+        data.map((c) => ({
+          id: c.id,
+          autor: profileMap.get(c.autor_id) || "Anónimo",
+          contenido: c.contenido,
+          fecha: c.fecha,
+          likes: c.likes || 0,
+        }))
+      );
+    } else {
+      setComments([]);
+    }
+  };
+
+  const handleToggleComments = () => {
+    const next = !showComments;
+    setShowComments(next);
+    if (next) loadComments();
+  };
+
+  const handleAddComment = async () => {
+    if (!newComment.trim() || !isLoggedIn || !user) {
+      console.log("Comment blocked:", { hasText: !!newComment.trim(), isLoggedIn, user: !!user });
+      return;
+    }
+    console.log("Comment attempt:", { postId: post.id, userId: user.id });
+
+    const { error } = await supabase.from("comments").insert({
+      post_id: post.id,
+      autor_id: user.id,
       contenido: newComment.trim(),
-      fecha: new Date().toISOString().split("T")[0],
-      likes: 0,
-    };
-    setComments([...comments, comment]);
+    });
+
+    if (error) {
+      console.error("Comment error:", error);
+      return;
+    }
     setNewComment("");
+    setCommentCount((prev) => prev + 1);
+    loadComments();
   };
 
-  const handleReport = (reason: string) => {
+  const handleReport = async (reason: string) => {
+    if (!user) return;
+
+    await supabase.from("reports").insert({
+      post_id: post.id,
+      reporter_id: user.id,
+      razon: reason,
+    });
+
     setReported(true);
     setShowReport(false);
     setTimeout(() => setReported(false), 3000);
-    void reason;
   };
 
   return (
@@ -162,7 +284,7 @@ export function PostCard({ post }: { post: Post }) {
               <span>{likeCount}</span>
             </button>
             <button
-              onClick={() => setShowComments(!showComments)}
+              onClick={handleToggleComments}
               className={`flex items-center gap-1.5 px-2 py-1 rounded-lg text-xs transition-all ${
                 showComments
                   ? "text-primary bg-primary/10"
@@ -170,7 +292,7 @@ export function PostCard({ post }: { post: Post }) {
               }`}
             >
               <MessageCircle className="w-4 h-4" />
-              <span>{comments.length}</span>
+              <span>{commentCount}</span>
               {showComments ? (
                 <ChevronUp className="w-3 h-3" />
               ) : (
@@ -254,10 +376,6 @@ export function PostCard({ post }: { post: Post }) {
                       {comment.contenido}
                     </p>
                   </div>
-                  <button className="flex items-center gap-1 text-[10px] text-text-muted hover:text-secondary shrink-0 self-start mt-1">
-                    <Heart className="w-3 h-3" />
-                    {comment.likes > 0 && comment.likes}
-                  </button>
                 </div>
               ))}
             </div>

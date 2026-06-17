@@ -1,3 +1,6 @@
+"use client";
+
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import {
   Heart,
@@ -10,12 +13,38 @@ import {
   Star,
 } from "lucide-react";
 import { AdBanner } from "@/components/AdBanner";
+import { supabase } from "@/lib/supabase";
 
 export default function Home() {
+  const [userCount, setUserCount] = useState("...");
+  const [postCount, setPostCount] = useState("...");
+  const [cantonCount, setCantonCount] = useState("...");
+
+  useEffect(() => {
+    supabase
+      .from("profiles")
+      .select("id", { count: "exact", head: true })
+      .eq("is_verified", true)
+      .then(({ count }) => setUserCount(String(count || 0)));
+
+    supabase
+      .from("posts")
+      .select("id", { count: "exact", head: true })
+      .then(({ count }) => setPostCount(String(count || 0)));
+
+    supabase
+      .from("posts")
+      .select("canton")
+      .then(({ data }) => {
+        const unique = new Set(data?.map((p) => p.canton).filter(Boolean));
+        setCantonCount(String(unique.size));
+      });
+  }, []);
+
   const stats = [
-    { icon: Users, label: "Usuarias verificadas", value: "0" },
-    { icon: Heart, label: "Experiencias compartidas", value: "0" },
-    { icon: MapPin, label: "Cantones activos", value: "0" },
+    { icon: Users, label: "Usuarios verificados", value: userCount },
+    { icon: Heart, label: "Experiencias compartidas", value: postCount },
+    { icon: MapPin, label: "Cantones activos", value: cantonCount },
     { icon: Star, label: "Valoración promedio", value: "-" },
   ];
 
