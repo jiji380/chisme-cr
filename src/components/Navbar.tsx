@@ -2,12 +2,12 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Menu, X, Heart, UserPlus, LogIn, LogOut, User } from "lucide-react";
+import { Menu, X, Heart, UserPlus, LogIn, LogOut, User, Shield } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 
 export function Navbar() {
   const [open, setOpen] = useState(false);
-  const { isLoggedIn, userName, logout } = useAuth();
+  const { isLoggedIn, isAdmin, userName, logout } = useAuth();
 
   return (
     <nav className="bg-white border-b border-border sticky top-0 z-50 shadow-sm">
@@ -46,6 +46,15 @@ export function Navbar() {
             >
               Publicar
             </Link>
+            {isAdmin && (
+              <Link
+                href="/admin"
+                className="px-4 py-2 rounded-lg text-sm font-medium text-primary hover:bg-primary/5 transition-all flex items-center gap-1"
+              >
+                <Shield className="w-4 h-4" />
+                Admin
+              </Link>
+            )}
           </div>
 
           <div className="hidden md:flex items-center gap-2">
@@ -116,6 +125,16 @@ export function Navbar() {
             >
               Publicar
             </Link>
+            {isAdmin && (
+              <Link
+                href="/admin"
+                className="flex items-center gap-1.5 px-4 py-2.5 rounded-lg text-sm font-medium text-primary hover:bg-primary/5"
+                onClick={() => setOpen(false)}
+              >
+                <Shield className="w-4 h-4" />
+                Admin
+              </Link>
+            )}
             <div className="pt-2 border-t border-border">
               {isLoggedIn ? (
                 <div className="flex items-center justify-between px-4 py-2">

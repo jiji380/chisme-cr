@@ -9,7 +9,10 @@ import {
   Users,
   FileText,
   AlertTriangle,
+  Lock,
 } from "lucide-react";
+import Link from "next/link";
+import { useAuth } from "@/context/AuthContext";
 
 interface PendingUser {
   id: string;
@@ -83,11 +86,33 @@ const mockReportedPosts: ReportedPost[] = [
 ];
 
 export default function AdminPage() {
+  const { isAdmin } = useAuth();
   const [users, setUsers] = useState(mockPendingUsers);
   const [posts, setPosts] = useState(mockReportedPosts);
   const [tab, setTab] = useState<"users" | "posts">("users");
 
   const pendingCount = users.filter((u) => u.estado === "pendiente").length;
+
+  if (!isAdmin) {
+    return (
+      <div className="max-w-lg mx-auto px-4 py-20 text-center">
+        <div className="w-20 h-20 bg-danger/10 rounded-full flex items-center justify-center mx-auto mb-6">
+          <Lock className="w-10 h-10 text-danger" />
+        </div>
+        <h1 className="text-2xl font-bold text-text mb-3">Acceso restringido</h1>
+        <p className="text-text-secondary mb-6 text-sm">
+          Necesitás credenciales de administrador para acceder a este panel.
+        </p>
+        <Link
+          href="/admin/login"
+          className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-primary to-primary-dark text-white rounded-xl text-sm font-medium hover:shadow-lg hover:shadow-primary/25 transition-all"
+        >
+          <Shield className="w-4 h-4" />
+          Iniciar sesión como admin
+        </Link>
+      </div>
+    );
+  }
 
   const handleUserAction = (id: string, action: "aprobado" | "rechazado") => {
     setUsers(users.map((u) => (u.id === id ? { ...u, estado: action } : u)));
