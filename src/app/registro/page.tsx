@@ -45,6 +45,12 @@ export default function RegistroPage() {
       return;
     }
 
+    if (!cedulaFront || !cedulaBack) {
+      setError("Debés subir ambas fotos de tu cédula");
+      setSubmitting(false);
+      return;
+    }
+
     const result = await register(email, password, seudonimo, nombre, apellidos, cedula);
     if (result.error) {
       setError(
@@ -53,12 +59,33 @@ export default function RegistroPage() {
           : result.error
       );
       setSubmitting(false);
-    } else {
-      // Sign out after registration - user needs admin approval
-      const { supabase } = await import("@/lib/supabase");
-      await supabase.auth.signOut();
-      router.push("/registro-exitoso");
+      return;
     }
+
+    // Upload cédula photos to Supabase Storage
+    const { supabase } = await import("@/lib/supabase");
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (user) {
+      const timestamp = Date.now();
+      const frontExt = cedulaFront.name.split(".").pop();
+      const backExt = cedulaBack.name.split(".").pop();
+
+      const [frontUpload, backUpload] = await Promise.all([
+        supabase.storage.from("cedulas").upload(`${user.id}/frente-${timestamp}.${frontExt}`, cedulaFront),
+        supabase.storage.from("cedulas").upload(`${user.id}/reverso-${timestamp}.${backExt}`, cedulaBack),
+      ]);
+
+      if (frontUpload.data && backUpload.data) {
+        await supabase.from("profiles").update({
+          cedula_front: frontUpload.data.path,
+          cedula_back: backUpload.data.path,
+        }).eq("id", user.id);
+      }
+    }
+
+    await supabase.auth.signOut();
+    router.push("/registro-exitoso");
   };
 
   return (

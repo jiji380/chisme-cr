@@ -12,6 +12,8 @@ import {
   Lock,
   Loader2,
   RefreshCw,
+  ImageIcon,
+  X,
 } from "lucide-react";
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
@@ -24,6 +26,8 @@ interface ProfileUser {
   nombre: string | null;
   apellidos: string | null;
   cedula: string | null;
+  cedula_front: string | null;
+  cedula_back: string | null;
   is_verified: boolean;
   fecha_ingreso: string;
 }
@@ -52,6 +56,24 @@ export default function AdminPage() {
   const [tab, setTab] = useState<"users" | "posts">("users");
   const [loading, setLoading] = useState(true);
   const [totalUsers, setTotalUsers] = useState(0);
+  const [viewingCedula, setViewingCedula] = useState<{ front: string | null; back: string | null; name: string } | null>(null);
+
+  const getCedulaUrl = async (path: string) => {
+    const { data } = await supabase.storage.from("cedulas").createSignedUrl(path, 300);
+    return data?.signedUrl || null;
+  };
+
+  const handleViewCedula = async (user: ProfileUser) => {
+    const [front, back] = await Promise.all([
+      user.cedula_front ? getCedulaUrl(user.cedula_front) : null,
+      user.cedula_back ? getCedulaUrl(user.cedula_back) : null,
+    ]);
+    setViewingCedula({
+      front,
+      back,
+      name: user.nombre && user.apellidos ? `${user.nombre} ${user.apellidos}` : user.seudonimo,
+    });
+  };
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -326,6 +348,15 @@ export default function AdminPage() {
                             {user.email} ·{" "}
                             {new Date(user.fecha_ingreso).toLocaleDateString("es-CR")}
                           </p>
+                          {(user.cedula_front || user.cedula_back) && (
+                            <button
+                              onClick={() => handleViewCedula(user)}
+                              className="mt-1.5 inline-flex items-center gap-1 px-2.5 py-1 bg-primary/5 text-primary rounded-lg text-xs font-medium hover:bg-primary/10 transition-colors"
+                            >
+                              <ImageIcon className="w-3 h-3" />
+                              Ver cédula
+                            </button>
+                          )}
                         </div>
                       </div>
 
@@ -424,6 +455,48 @@ export default function AdminPage() {
             </div>
           )}
         </>
+      )}
+
+      {/* Cédula modal */}
+      {viewingCedula && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setViewingCedula(null)}>
+          <div className="bg-white rounded-2xl border border-border shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between p-5 border-b border-border">
+              <div>
+                <h3 className="font-semibold text-text">Cédula de {viewingCedula.name}</h3>
+                <p className="text-xs text-text-muted mt-0.5">Fotos subidas durante el registro</p>
+              </div>
+              <button
+                onClick={() => setViewingCedula(null)}
+                className="w-8 h-8 rounded-lg bg-surface-alt flex items-center justify-center text-text-muted hover:text-text hover:bg-surface-hover transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <div className="p-5 grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <p className="text-xs font-medium text-text-muted mb-2">Frente</p>
+                {viewingCedula.front ? (
+                  <img src={viewingCedula.front} alt="Cédula frente" className="w-full rounded-xl border border-border" />
+                ) : (
+                  <div className="w-full h-48 bg-surface-alt rounded-xl flex items-center justify-center">
+                    <p className="text-xs text-text-muted">No disponible</p>
+                  </div>
+                )}
+              </div>
+              <div>
+                <p className="text-xs font-medium text-text-muted mb-2">Reverso</p>
+                {viewingCedula.back ? (
+                  <img src={viewingCedula.back} alt="Cédula reverso" className="w-full rounded-xl border border-border" />
+                ) : (
+                  <div className="w-full h-48 bg-surface-alt rounded-xl flex items-center justify-center">
+                    <p className="text-xs text-text-muted">No disponible</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
