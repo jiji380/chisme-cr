@@ -68,20 +68,33 @@ export default function RegistroPage() {
 
     if (user) {
       const timestamp = Date.now();
-      const frontExt = cedulaFront.name.split(".").pop();
-      const backExt = cedulaBack.name.split(".").pop();
+      const frontExt = cedulaFront.name.split(".").pop() || "jpg";
+      const backExt = cedulaBack.name.split(".").pop() || "jpg";
 
-      const [frontUpload, backUpload] = await Promise.all([
-        supabase.storage.from("cedulas").upload(`${user.id}/frente-${timestamp}.${frontExt}`, cedulaFront),
-        supabase.storage.from("cedulas").upload(`${user.id}/reverso-${timestamp}.${backExt}`, cedulaBack),
-      ]);
+      const frontUpload = await supabase.storage
+        .from("cedulas")
+        .upload(`${user.id}/frente-${timestamp}.${frontExt}`, cedulaFront, { upsert: true });
 
-      if (frontUpload.data && backUpload.data) {
-        await supabase.from("profiles").update({
-          cedula_front: frontUpload.data.path,
-          cedula_back: backUpload.data.path,
+      const backUpload = await supabase.storage
+        .from("cedulas")
+        .upload(`${user.id}/reverso-${timestamp}.${backExt}`, cedulaBack, { upsert: true });
+
+      if (frontUpload.error) console.error("Front upload error:", frontUpload.error);
+      if (backUpload.error) console.error("Back upload error:", backUpload.error);
+
+      const frontPath = frontUpload.data?.path || null;
+      const backPath = backUpload.data?.path || null;
+
+      if (frontPath || backPath) {
+        const updateResult = await supabase.from("profiles").update({
+          cedula_front: frontPath,
+          cedula_back: backPath,
         }).eq("id", user.id);
+
+        if (updateResult.error) console.error("Profile update error:", updateResult.error);
       }
+    } else {
+      console.error("No user found after registration");
     }
 
     await supabase.auth.signOut();
