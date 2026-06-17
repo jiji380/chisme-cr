@@ -26,6 +26,9 @@ export default function RegistroPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [seudonimo, setSeudonimo] = useState("");
+  const [nombre, setNombre] = useState("");
+  const [apellidos, setApellidos] = useState("");
+  const [cedula, setCedula] = useState("");
   const frontRef = useRef<HTMLInputElement>(null);
   const backRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
@@ -42,7 +45,7 @@ export default function RegistroPage() {
       return;
     }
 
-    const result = await register(email, password, seudonimo);
+    const result = await register(email, password, seudonimo, nombre, apellidos, cedula);
     if (result.error) {
       setError(
         result.error === "User already registered"
@@ -110,6 +113,8 @@ export default function RegistroPage() {
             <input
               type="text"
               required
+              value={nombre}
+              onChange={(e) => setNombre(e.target.value)}
               placeholder="María"
               className="w-full px-4 py-2.5 bg-surface-alt border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
             />
@@ -121,6 +126,8 @@ export default function RegistroPage() {
             <input
               type="text"
               required
+              value={apellidos}
+              onChange={(e) => setApellidos(e.target.value)}
               placeholder="Rodríguez Mora"
               className="w-full px-4 py-2.5 bg-surface-alt border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
             />
@@ -134,6 +141,8 @@ export default function RegistroPage() {
           <input
             type="text"
             required
+            value={cedula}
+            onChange={(e) => setCedula(e.target.value)}
             placeholder="0-0000-0000"
             pattern="\d{1}-\d{4}-\d{4}"
             className="w-full px-4 py-2.5 bg-surface-alt border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
@@ -329,8 +338,8 @@ export default function RegistroPage() {
           />
           <label htmlFor="terms" className="text-xs text-text-secondary">
             Acepto los términos de uso y la política de privacidad. Entiendo que
-            mi cédula será usada únicamente para verificación, que solo se
-            contenido inapropiado será eliminado.
+            mi cédula será usada únicamente para verificación y que contenido
+            inapropiado será eliminado.
           </label>
         </div>
 

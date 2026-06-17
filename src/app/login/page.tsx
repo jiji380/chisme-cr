@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { LogIn, Eye, EyeOff, Heart, AlertCircle, Loader2 } from "lucide-react";
+import { LogIn, Eye, EyeOff, Heart, AlertCircle, Loader2, Clock, Shield, ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
@@ -12,6 +12,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [pendingApproval, setPendingApproval] = useState(false);
   const { login } = useAuth();
   const router = useRouter();
 
@@ -21,17 +22,72 @@ export default function LoginPage() {
     setSubmitting(true);
 
     const result = await login(email, password);
+    if (result.needsVerification) {
+      setPendingApproval(true);
+      setSubmitting(false);
+      return;
+    }
     if (result.error) {
       setError(
         result.error === "Invalid login credentials"
           ? "Correo o contraseña incorrectos"
-          : result.error
+          : result.error === "Email not confirmed"
+            ? "Necesitás confirmar tu correo electrónico primero. Revisá tu bandeja de entrada."
+            : result.error
       );
       setSubmitting(false);
     } else {
       router.push("/explorar");
     }
   };
+
+  if (pendingApproval) {
+    return (
+      <div className="max-w-md mx-auto px-4 py-16">
+        <div className="bg-white rounded-2xl border border-border p-8 sm:p-10 shadow-sm text-center">
+          <div className="w-20 h-20 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-6">
+            <Clock className="w-10 h-10 text-amber-500" />
+          </div>
+
+          <h1 className="text-2xl font-bold text-text mb-3">
+            Cuenta pendiente de aprobación
+          </h1>
+
+          <p className="text-text-secondary text-sm mb-6 max-w-sm mx-auto">
+            Tu cuenta aún no ha sido aprobada por nuestro equipo de
+            administración. Este proceso puede tomar hasta 24 horas.
+          </p>
+
+          <div className="p-4 bg-surface-alt rounded-xl mb-6 text-left">
+            <div className="flex items-start gap-3">
+              <Shield className="w-5 h-5 text-primary shrink-0 mt-0.5" />
+              <div>
+                <p className="text-sm font-medium text-text mb-1">
+                  ¿Por qué se necesita aprobación?
+                </p>
+                <p className="text-xs text-text-muted">
+                  Para mantener nuestra comunidad segura, verificamos la
+                  identidad de cada usuario antes de permitir el acceso.
+                  Esto protege a todos los miembros.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <button
+            onClick={() => {
+              setPendingApproval(false);
+              setPassword("");
+            }}
+            className="inline-flex items-center gap-2 text-sm text-primary font-medium hover:underline"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Volver al inicio de sesión
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-md mx-auto px-4 py-16">

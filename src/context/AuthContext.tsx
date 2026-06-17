@@ -7,18 +7,20 @@ import type { User } from "@supabase/supabase-js";
 interface AuthContextType {
   isLoggedIn: boolean;
   isAdmin: boolean;
+  isVerified: boolean;
   userName: string;
   userEmail: string;
   user: User | null;
   loading: boolean;
-  login: (email: string, password: string) => Promise<{ error: string | null }>;
-  register: (email: string, password: string, seudonimo: string) => Promise<{ error: string | null }>;
+  login: (email: string, password: string) => Promise<{ error: string | null; needsVerification?: boolean }>;
+  register: (email: string, password: string, seudonimo: string, nombre: string, apellidos: string, cedula: string) => Promise<{ error: string | null }>;
   logout: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType>({
   isLoggedIn: false,
   isAdmin: false,
+  isVerified: false,
   userName: "",
   userEmail: "",
   user: null,
@@ -32,24 +34,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [userName, setUserName] = useState("");
   const [isAdmin, setIsAdmin] = useState(false);
+  const [isVerified, setIsVerified] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        loadProfile(session.user.id);
+      const u = session?.user ?? null;
+      setUser(u);
+      if (u) {
+        loadProfile(u.id);
       }
       setLoading(false);
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        loadProfile(session.user.id);
+      const u = session?.user ?? null;
+      setUser(u);
+      if (u) {
+        loadProfile(u.id);
       } else {
         setUserName("");
         setIsAdmin(false);
+        setIsVerified(false);
       }
     });
 
@@ -59,27 +65,48 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   async function loadProfile(userId: string) {
     const { data } = await supabase
       .from("profiles")
-      .select("seudonimo, is_admin")
+      .select("seudonimo, is_admin, is_verified")
       .eq("id", userId)
       .single();
 
     if (data) {
       setUserName(data.seudonimo || "");
       setIsAdmin(data.is_admin || false);
+      setIsVerified(data.is_verified || false);
     }
   }
 
   const login = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) return { error: error.message };
+
+    // Check if profile is verified by admin
+    if (data.user) {
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("is_verified, is_admin")
+        .eq("id", data.user.id)
+        .single();
+
+      if (profile && !profile.is_verified && !profile.is_admin) {
+        // Sign out - they can't use the app yet
+        await supabase.auth.signOut();
+        setUser(null);
+        return { error: null, needsVerification: true };
+      }
+    }
+
     return { error: null };
   };
 
-  const register = async (email: string, password: string, seudonimo: string) => {
+  const register = async (email: string, password: string, seudonimo: string, nombre: string, apellidos: string, cedula: string) => {
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
-      options: { data: { seudonimo } },
+      options: {
+        data: { seudonimo },
+        emailRedirectTo: `${window.location.origin}/login`,
+      },
     });
     if (error) return { error: error.message };
 
@@ -88,6 +115,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         id: data.user.id,
         seudonimo,
         email,
+        nombre,
+        apellidos,
+        cedula,
         is_admin: false,
         is_verified: false,
       });
@@ -101,6 +131,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null);
     setUserName("");
     setIsAdmin(false);
+    setIsVerified(false);
   };
 
   return (
@@ -108,6 +139,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       value={{
         isLoggedIn: !!user,
         isAdmin,
+        isVerified,
         userName,
         userEmail: user?.email || "",
         user,
