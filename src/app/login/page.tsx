@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { LogIn, Eye, EyeOff, Heart } from "lucide-react";
+import { LogIn, Eye, EyeOff, Heart, AlertCircle, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
@@ -9,8 +9,29 @@ import { useAuth } from "@/context/AuthContext";
 export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
   const { login } = useAuth();
   const router = useRouter();
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+    setSubmitting(true);
+
+    const result = await login(email, password);
+    if (result.error) {
+      setError(
+        result.error === "Invalid login credentials"
+          ? "Correo o contraseña incorrectos"
+          : result.error
+      );
+      setSubmitting(false);
+    } else {
+      router.push("/explorar");
+    }
+  };
 
   return (
     <div className="max-w-md mx-auto px-4 py-16">
@@ -27,13 +48,16 @@ export default function LoginPage() {
       </div>
 
       <form
-        onSubmit={(e) => {
-          e.preventDefault();
-          login(email || "Usuaria");
-          router.push("/explorar");
-        }}
+        onSubmit={handleSubmit}
         className="bg-white rounded-2xl border border-border p-6 sm:p-8 shadow-sm space-y-5"
       >
+        {error && (
+          <div className="flex items-center gap-2 p-3 bg-danger/5 border border-danger/20 rounded-xl">
+            <AlertCircle className="w-4 h-4 text-danger shrink-0" />
+            <p className="text-xs text-danger font-medium">{error}</p>
+          </div>
+        )}
+
         <div>
           <label className="block text-sm font-medium text-text mb-1.5">
             Correo electrónico
@@ -56,6 +80,8 @@ export default function LoginPage() {
             <input
               type={showPassword ? "text" : "password"}
               required
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
               placeholder="Tu contraseña"
               className="w-full px-4 py-2.5 pr-11 bg-surface-alt border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
             />
@@ -75,10 +101,15 @@ export default function LoginPage() {
 
         <button
           type="submit"
-          className="w-full py-3 bg-gradient-to-r from-primary to-primary-dark text-white font-semibold rounded-xl hover:shadow-lg hover:shadow-primary/25 transition-all text-sm flex items-center justify-center gap-2"
+          disabled={submitting}
+          className="w-full py-3 bg-gradient-to-r from-primary to-primary-dark text-white font-semibold rounded-xl hover:shadow-lg hover:shadow-primary/25 transition-all text-sm flex items-center justify-center gap-2 disabled:opacity-60"
         >
-          <LogIn className="w-4 h-4" />
-          Ingresar
+          {submitting ? (
+            <Loader2 className="w-4 h-4 animate-spin" />
+          ) : (
+            <LogIn className="w-4 h-4" />
+          )}
+          {submitting ? "Ingresando..." : "Ingresar"}
         </button>
 
         <p className="text-center text-xs text-text-muted">

@@ -2,30 +2,41 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Shield, Eye, EyeOff, AlertCircle } from "lucide-react";
+import { Shield, Eye, EyeOff, AlertCircle, Loader2 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 
 export default function AdminLoginPage() {
-  const { loginAdmin, isAdmin } = useAuth();
+  const { login, isAdmin } = useAuth();
   const router = useRouter();
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState(false);
+  const [error, setError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
   if (isAdmin) {
     router.push("/admin");
     return null;
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const success = loginAdmin(password);
-    if (success) {
-      router.push("/admin");
-    } else {
-      setError(true);
-      setTimeout(() => setError(false), 3000);
+    setError("");
+    setSubmitting(true);
+
+    const result = await login(email, password);
+    if (result.error) {
+      setError("Credenciales incorrectas");
+      setSubmitting(false);
+      return;
     }
+
+    // After login, auth context will check is_admin from profile
+    // Small delay to let the profile load
+    setTimeout(() => {
+      setSubmitting(false);
+      router.push("/admin");
+    }, 1000);
   };
 
   return (
@@ -47,15 +58,27 @@ export default function AdminLoginPage() {
         {error && (
           <div className="flex items-center gap-2 p-3 bg-danger/5 border border-danger/20 rounded-xl">
             <AlertCircle className="w-4 h-4 text-danger shrink-0" />
-            <p className="text-xs text-danger font-medium">
-              Contraseña incorrecta
-            </p>
+            <p className="text-xs text-danger font-medium">{error}</p>
           </div>
         )}
 
         <div>
           <label className="block text-sm font-medium text-text mb-1.5">
-            Contraseña de administrador
+            Correo de administrador
+          </label>
+          <input
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+            placeholder="admin@chismecr.com"
+            className="w-full px-4 py-2.5 bg-surface-alt border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-text mb-1.5">
+            Contraseña
           </label>
           <div className="relative">
             <input
@@ -82,9 +105,15 @@ export default function AdminLoginPage() {
 
         <button
           type="submit"
-          className="w-full py-3 bg-gradient-to-r from-primary to-primary-dark text-white font-semibold rounded-xl hover:shadow-lg hover:shadow-primary/25 transition-all text-sm"
+          disabled={submitting}
+          className="w-full py-3 bg-gradient-to-r from-primary to-primary-dark text-white font-semibold rounded-xl hover:shadow-lg hover:shadow-primary/25 transition-all text-sm flex items-center justify-center gap-2 disabled:opacity-60"
         >
-          Entrar
+          {submitting ? (
+            <Loader2 className="w-4 h-4 animate-spin" />
+          ) : (
+            <Shield className="w-4 h-4" />
+          )}
+          {submitting ? "Verificando..." : "Entrar"}
         </button>
       </form>
     </div>

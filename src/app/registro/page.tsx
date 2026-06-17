@@ -13,15 +13,47 @@ import {
   Lock,
   X,
   FileImage,
+  Loader2,
 } from "lucide-react";
+import { useAuth } from "@/context/AuthContext";
 
 export default function RegistroPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [cedulaFront, setCedulaFront] = useState<File | null>(null);
   const [cedulaBack, setCedulaBack] = useState<File | null>(null);
+  const [error, setError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [seudonimo, setSeudonimo] = useState("");
   const frontRef = useRef<HTMLInputElement>(null);
   const backRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
+  const { register } = useAuth();
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+    setSubmitting(true);
+
+    if (password.length < 8) {
+      setError("La contraseña debe tener al menos 8 caracteres");
+      setSubmitting(false);
+      return;
+    }
+
+    const result = await register(email, password, seudonimo);
+    if (result.error) {
+      setError(
+        result.error === "User already registered"
+          ? "Este correo ya está registrado"
+          : result.error
+      );
+      setSubmitting(false);
+    } else {
+      router.push("/verificar-correo");
+    }
+  };
 
   return (
     <div className="max-w-lg mx-auto px-4 py-12">
@@ -36,12 +68,16 @@ export default function RegistroPage() {
       </div>
 
       <form
-        onSubmit={(e) => {
-          e.preventDefault();
-          router.push("/verificar-correo");
-        }}
+        onSubmit={handleSubmit}
         className="bg-white rounded-2xl border border-border p-6 sm:p-8 shadow-sm space-y-5"
       >
+        {error && (
+          <div className="flex items-center gap-2 p-3 bg-danger/5 border border-danger/20 rounded-xl">
+            <AlertCircle className="w-4 h-4 text-danger shrink-0" />
+            <p className="text-xs text-danger font-medium">{error}</p>
+          </div>
+        )}
+
         {/* Privacy notice */}
         <div className="p-4 bg-primary/5 rounded-xl border border-primary/10">
           <div className="flex items-start gap-2 mb-2">
@@ -232,6 +268,8 @@ export default function RegistroPage() {
           <input
             type="text"
             required
+            value={seudonimo}
+            onChange={(e) => setSeudonimo(e.target.value)}
             placeholder="Ej: Anónima 7, Mariposa Feliz"
             className="w-full px-4 py-2.5 bg-surface-alt border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
           />
@@ -247,6 +285,8 @@ export default function RegistroPage() {
           <input
             type="email"
             required
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
             placeholder="tu@correo.com"
             className="w-full px-4 py-2.5 bg-surface-alt border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
           />
@@ -261,6 +301,8 @@ export default function RegistroPage() {
               type={showPassword ? "text" : "password"}
               required
               minLength={8}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
               placeholder="Mínimo 8 caracteres"
               className="w-full px-4 py-2.5 pr-11 bg-surface-alt border border-border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
             />
@@ -288,16 +330,21 @@ export default function RegistroPage() {
           <label htmlFor="terms" className="text-xs text-text-secondary">
             Acepto los términos de uso y la política de privacidad. Entiendo que
             mi cédula será usada únicamente para verificación, que solo se
-            contenido inapropiado será
-            eliminado.
+            contenido inapropiado será eliminado.
           </label>
         </div>
 
         <button
           type="submit"
-          className="w-full py-3 bg-gradient-to-r from-primary to-primary-dark text-white font-semibold rounded-xl hover:shadow-lg hover:shadow-primary/25 transition-all text-sm"
+          disabled={submitting}
+          className="w-full py-3 bg-gradient-to-r from-primary to-primary-dark text-white font-semibold rounded-xl hover:shadow-lg hover:shadow-primary/25 transition-all text-sm flex items-center justify-center gap-2 disabled:opacity-60"
         >
-          Enviar solicitud de registro
+          {submitting ? (
+            <Loader2 className="w-4 h-4 animate-spin" />
+          ) : (
+            <UserPlus className="w-4 h-4" />
+          )}
+          {submitting ? "Registrando..." : "Enviar solicitud de registro"}
         </button>
 
         <p className="text-[10px] text-text-muted text-center">
