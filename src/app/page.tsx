@@ -9,17 +9,14 @@ import {
   Eye,
   Star,
 } from "lucide-react";
-import { PostCard } from "@/components/PostCard";
 import { AdBanner } from "@/components/AdBanner";
-import { mockPosts } from "@/data/mock-posts";
 
 export default function Home() {
-  const featuredPosts = mockPosts.slice(0, 3);
   const stats = [
-    { icon: Users, label: "Usuarias verificadas", value: "2,450+" },
-    { icon: Heart, label: "Experiencias compartidas", value: "8,920+" },
-    { icon: MapPin, label: "Cantones activos", value: "82" },
-    { icon: Star, label: "Valoración promedio", value: "4.9" },
+    { icon: Users, label: "Usuarias verificadas", value: "0" },
+    { icon: Heart, label: "Experiencias compartidas", value: "0" },
+    { icon: MapPin, label: "Cantones activos", value: "0" },
+    { icon: Star, label: "Valoración promedio", value: "-" },
   ];
 
   return (
@@ -37,13 +34,13 @@ export default function Home() {
               <span>Comunidad 100% costarricense</span>
             </div>
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white leading-tight mb-6">
-              Compartí experiencias
+              Compartí tus
               <br />
-              <span className="text-accent">positivas</span> en CR
+              <span className="text-accent">experiencias</span> en CR
             </h1>
             <p className="text-lg sm:text-xl text-white/80 mb-8 max-w-2xl mx-auto">
               Conocé gente increíble, compartí historias que inspiran y
-              descubrí las mejores experiencias en cada rincón de Costa Rica.
+              descubrí experiencias en cada rincón de Costa Rica.
             </p>
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
               <Link
@@ -90,7 +87,7 @@ export default function Home() {
             ¿Cómo funciona?
           </h2>
           <p className="text-text-secondary text-sm max-w-lg mx-auto">
-            Un proceso simple y seguro para compartir experiencias positivas
+            Un proceso simple y seguro para compartir experiencias
           </p>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -107,7 +104,7 @@ export default function Home() {
               icon: Heart,
               title: "Compartí tu experiencia",
               description:
-                "Publicá historias positivas sobre personas que conociste. Elegí un nombre público como 'Anónima 7'.",
+                "Publicá historias sobre personas que conociste. Elegí un nombre público como 'Anónima 7'.",
             },
             {
               step: "03",
@@ -143,50 +140,15 @@ export default function Home() {
         <AdBanner position="inline" />
       </div>
 
-      {/* Featured posts */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-20">
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <h2 className="text-2xl sm:text-3xl font-bold text-text mb-1">
-              Experiencias recientes
-            </h2>
-            <p className="text-text-secondary text-sm">
-              Historias reales de personas reales
-            </p>
-          </div>
-          <Link
-            href="/explorar"
-            className="hidden sm:inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:text-primary-dark transition-colors"
-          >
-            Ver todas
-            <ArrowRight className="w-4 h-4" />
-          </Link>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
-          {featuredPosts.map((post) => (
-            <PostCard key={post.id} post={post} />
-          ))}
-        </div>
-        <div className="sm:hidden text-center mt-6">
-          <Link
-            href="/explorar"
-            className="inline-flex items-center gap-1.5 text-sm font-medium text-primary"
-          >
-            Ver todas las experiencias
-            <ArrowRight className="w-4 h-4" />
-          </Link>
-        </div>
-      </section>
-
       {/* CTA */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-16 sm:pb-20">
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-20">
         <div className="bg-gradient-to-r from-primary to-secondary rounded-3xl p-8 sm:p-12 text-center text-white relative overflow-hidden">
           <div className="absolute inset-0 opacity-10">
             <div className="absolute top-0 right-0 w-64 h-64 bg-white rounded-full blur-3xl" />
           </div>
           <div className="relative">
             <h2 className="text-2xl sm:text-3xl font-bold mb-3">
-              ¿Tenés una experiencia positiva?
+              ¿Tenés una experiencia para compartir?
             </h2>
             <p className="text-white/80 mb-6 max-w-lg mx-auto">
               Unite a nuestra comunidad y compartí historias que inspiran a

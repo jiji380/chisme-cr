@@ -31,7 +31,7 @@ export default function RegistroPage() {
         </div>
         <h1 className="text-2xl font-bold text-text mb-2">Crear cuenta</h1>
         <p className="text-sm text-text-secondary">
-          Unite a la comunidad de experiencias positivas de Costa Rica
+          Unite a la comunidad de experiencias de Costa Rica
         </p>
       </div>
 
@@ -288,7 +288,7 @@ export default function RegistroPage() {
           <label htmlFor="terms" className="text-xs text-text-secondary">
             Acepto los términos de uso y la política de privacidad. Entiendo que
             mi cédula será usada únicamente para verificación, que solo se
-            permiten experiencias positivas, y que contenido inapropiado será
+            contenido inapropiado será
             eliminado.
           </label>
         </div>

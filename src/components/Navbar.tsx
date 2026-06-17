@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Menu, X, Heart, UserPlus, LogIn, Shield, LogOut, User, Map } from "lucide-react";
+import { Menu, X, Heart, UserPlus, LogIn, LogOut, User } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 
 export function Navbar() {
@@ -22,7 +22,7 @@ export function Navbar() {
                 Chisme CR
               </span>
               <span className="hidden sm:block text-[10px] text-text-muted -mt-1">
-                Experiencias Positivas
+                Experiencias
               </span>
             </div>
           </Link>
@@ -45,20 +45,6 @@ export function Navbar() {
               className="px-4 py-2 rounded-lg text-sm font-medium text-text-secondary hover:text-primary hover:bg-primary/5 transition-all"
             >
               Publicar
-            </Link>
-            <Link
-              href="/mapa"
-              className="px-4 py-2 rounded-lg text-sm font-medium text-text-secondary hover:text-primary hover:bg-primary/5 transition-all"
-            >
-              <Map className="w-4 h-4 inline mr-1" />
-              Mapa
-            </Link>
-            <Link
-              href="/admin"
-              className="px-4 py-2 rounded-lg text-sm font-medium text-text-secondary hover:text-primary hover:bg-primary/5 transition-all"
-            >
-              <Shield className="w-4 h-4 inline mr-1" />
-              Admin
             </Link>
           </div>
 
@@ -129,22 +115,6 @@ export function Navbar() {
               onClick={() => setOpen(false)}
             >
               Publicar
-            </Link>
-            <Link
-              href="/mapa"
-              className="block px-4 py-2.5 rounded-lg text-sm font-medium text-text-secondary hover:text-primary hover:bg-primary/5"
-              onClick={() => setOpen(false)}
-            >
-              <Map className="w-4 h-4 inline mr-1" />
-              Mapa
-            </Link>
-            <Link
-              href="/admin"
-              className="block px-4 py-2.5 rounded-lg text-sm font-medium text-text-secondary hover:text-primary hover:bg-primary/5"
-              onClick={() => setOpen(false)}
-            >
-              <Shield className="w-4 h-4 inline mr-1" />
-              Admin
             </Link>
             <div className="pt-2 border-t border-border">
               {isLoggedIn ? (

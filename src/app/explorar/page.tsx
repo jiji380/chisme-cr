@@ -55,7 +55,7 @@ function ExplorarContent() {
           Explorar experiencias
         </h1>
         <p className="text-text-secondary text-sm">
-          Descubrí historias positivas de todo Costa Rica
+          Descubrí experiencias de todo Costa Rica
         </p>
       </div>
 

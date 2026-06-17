@@ -35,7 +35,7 @@ const categoriaConfig: Record<
 };
 
 const reportReasons = [
-  "Contenido negativo o acusaciones",
+  "Contenido inapropiado",
   "Información personal de terceros",
   "Contenido ofensivo o irrespetuoso",
   "Spam o publicidad",
@@ -82,34 +82,77 @@ export function PostCard({ post }: { post: Post }) {
 
   return (
     <article className="bg-white rounded-2xl border border-border hover:border-primary-light/50 shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden">
-      <div className="p-5 sm:p-6">
-        {/* Header */}
-        <div className="flex items-start justify-between mb-3">
-          <div className="flex items-center gap-3">
-            <Link
-              href={`/perfil/${post.autorId}`}
-              className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-white font-bold text-sm shadow-sm hover:shadow-md transition-shadow"
-            >
-              {post.autor.charAt(0)}
-            </Link>
-            <div>
+      {/* Image header */}
+      {post.imagen && (
+        <div className="relative h-48 sm:h-56 overflow-hidden">
+          <img
+            src={post.imagen}
+            alt="Experiencia"
+            className="w-full h-full object-cover"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
+          <div className="absolute bottom-3 left-4 right-4 flex items-center justify-between">
+            <div className="flex items-center gap-2">
               <Link
                 href={`/perfil/${post.autorId}`}
-                className="font-semibold text-sm text-text hover:text-primary transition-colors"
+                className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-white font-bold text-xs shadow-sm"
               >
-                {post.autor}
+                {post.autor.charAt(0)}
               </Link>
-              <div className="flex items-center gap-1 text-xs text-text-muted">
-                <Calendar className="w-3 h-3" />
-                {new Date(post.fecha).toLocaleDateString("es-CR", {
-                  day: "numeric",
-                  month: "short",
-                  year: "numeric",
-                })}
+              <div>
+                <Link
+                  href={`/perfil/${post.autorId}`}
+                  className="font-semibold text-xs text-white hover:underline"
+                >
+                  {post.autor}
+                </Link>
+                <div className="flex items-center gap-1 text-[10px] text-white/70">
+                  <Calendar className="w-2.5 h-2.5" />
+                  {new Date(post.fecha).toLocaleDateString("es-CR", {
+                    day: "numeric",
+                    month: "short",
+                  })}
+                </div>
               </div>
             </div>
+            <span
+              className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-white/20 backdrop-blur-sm text-white`}
+            >
+              <Tag className="w-2.5 h-2.5" />
+              {cat.label}
+            </span>
           </div>
-          <div className="flex items-center gap-2">
+        </div>
+      )}
+
+      <div className="p-5 sm:p-6">
+        {/* Header (only if no image) */}
+        {!post.imagen && (
+          <div className="flex items-start justify-between mb-3">
+            <div className="flex items-center gap-3">
+              <Link
+                href={`/perfil/${post.autorId}`}
+                className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-white font-bold text-sm shadow-sm hover:shadow-md transition-shadow"
+              >
+                {post.autor.charAt(0)}
+              </Link>
+              <div>
+                <Link
+                  href={`/perfil/${post.autorId}`}
+                  className="font-semibold text-sm text-text hover:text-primary transition-colors"
+                >
+                  {post.autor}
+                </Link>
+                <div className="flex items-center gap-1 text-xs text-text-muted">
+                  <Calendar className="w-3 h-3" />
+                  {new Date(post.fecha).toLocaleDateString("es-CR", {
+                    day: "numeric",
+                    month: "short",
+                    year: "numeric",
+                  })}
+                </div>
+              </div>
+            </div>
             <span
               className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium ${cat.color} ${cat.bg}`}
             >
@@ -117,7 +160,7 @@ export function PostCard({ post }: { post: Post }) {
               {cat.label}
             </span>
           </div>
-        </div>
+        )}
 
         {/* Content */}
         <p className="text-text text-sm leading-relaxed mb-4">
@@ -249,7 +292,6 @@ export function PostCard({ post }: { post: Post }) {
             </div>
           )}
 
-          {/* Add comment */}
           {isLoggedIn ? (
             <div className="px-5 sm:px-6 py-3">
               <div className="flex gap-2">

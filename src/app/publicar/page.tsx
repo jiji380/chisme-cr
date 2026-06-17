@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import {
   Send,
   MapPin,
@@ -10,6 +10,8 @@ import {
   Lock,
   LogIn,
   UserPlus,
+  ImagePlus,
+  X,
 } from "lucide-react";
 import Link from "next/link";
 import { provincias } from "@/data/costarica";
@@ -21,11 +23,21 @@ export default function PublicarPage() {
   const [canton, setCanton] = useState("");
   const [distrito, setDistrito] = useState("");
   const [submitted, setSubmitted] = useState(false);
+  const [foto, setFoto] = useState<string | null>(null);
+  const fotoRef = useRef<HTMLInputElement>(null);
 
   const selectedProvincia = provincias.find((p) => p.nombre === provincia);
   const selectedCanton = selectedProvincia?.cantones.find(
     (c) => c.nombre === canton
   );
+
+  const handleFoto = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => setFoto(reader.result as string);
+    reader.readAsDataURL(file);
+  };
 
   if (!isLoggedIn) {
     return (
@@ -74,10 +86,13 @@ export default function PublicarPage() {
           ¡Experiencia publicada!
         </h1>
         <p className="text-text-secondary">
-          Tu experiencia positiva ya está visible para la comunidad.
+          Tu experiencia ya está visible para la comunidad.
         </p>
         <button
-          onClick={() => setSubmitted(false)}
+          onClick={() => {
+            setSubmitted(false);
+            setFoto(null);
+          }}
           className="mt-6 px-6 py-2.5 bg-primary text-white rounded-xl text-sm font-medium hover:bg-primary-dark transition-colors"
         >
           Publicar otra experiencia
@@ -93,7 +108,7 @@ export default function PublicarPage() {
           Compartí tu experiencia
         </h1>
         <p className="text-sm text-text-secondary">
-          Contanos algo positivo que te haya pasado
+          Contanos algo que te haya pasado
         </p>
       </div>
 
@@ -108,8 +123,8 @@ export default function PublicarPage() {
           <div className="flex items-start gap-2">
             <AlertCircle className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
             <p className="text-xs text-amber-700">
-              Solo se permiten experiencias positivas. Contenido negativo,
-              acusaciones o información personal de terceros será eliminado.
+              Contenido inapropiado, acusaciones o información personal de
+              terceros será eliminado.
             </p>
           </div>
         </div>
@@ -140,12 +155,60 @@ export default function PublicarPage() {
             required
             rows={5}
             maxLength={500}
-            placeholder="Contanos tu experiencia positiva..."
+            placeholder="Contanos tu experiencia..."
             className="w-full px-4 py-3 bg-surface-alt border border-border rounded-xl text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
           />
           <p className="text-xs text-text-muted mt-1 text-right">
             Máximo 500 caracteres
           </p>
+        </div>
+
+        {/* Photo upload */}
+        <div>
+          <label className="block text-sm font-medium text-text mb-1.5">
+            <ImagePlus className="w-4 h-4 inline mr-1" />
+            Foto (opcional)
+          </label>
+          <input
+            ref={fotoRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={handleFoto}
+          />
+          {foto ? (
+            <div className="relative rounded-xl overflow-hidden">
+              <img
+                src={foto}
+                alt="Preview"
+                className="w-full h-48 object-cover rounded-xl"
+              />
+              <button
+                type="button"
+                onClick={() => {
+                  setFoto(null);
+                  if (fotoRef.current) fotoRef.current.value = "";
+                }}
+                className="absolute top-2 right-2 w-8 h-8 bg-black/50 backdrop-blur-sm rounded-full flex items-center justify-center text-white hover:bg-black/70 transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={() => fotoRef.current?.click()}
+              className="w-full border-2 border-dashed border-border hover:border-primary/40 rounded-xl p-6 text-center transition-colors group"
+            >
+              <ImagePlus className="w-8 h-8 text-text-muted group-hover:text-primary mx-auto mb-2 transition-colors" />
+              <p className="text-xs text-text-muted group-hover:text-primary font-medium transition-colors">
+                Agregá una foto a tu experiencia
+              </p>
+              <p className="text-[10px] text-text-muted/60 mt-1">
+                JPG, PNG (máx. 5MB)
+              </p>
+            </button>
+          )}
         </div>
 
         <div>

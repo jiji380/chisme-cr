@@ -16,8 +16,7 @@ export function Footer() {
               </span>
             </div>
             <p className="text-sm text-text-muted">
-              Comparte experiencias positivas y conocé gente increíble en Costa
-              Rica.
+              Compartí experiencias y conocé gente increíble en Costa Rica.
             </p>
           </div>
           <div>
@@ -76,7 +75,6 @@ export function Footer() {
         </div>
       </div>
 
-      {/* Ad banner placeholder */}
       <div className="bg-surface-alt border-t border-border">
         <div className="max-w-7xl mx-auto px-4 py-3 text-center">
           <div className="inline-block px-4 py-2 rounded-lg bg-surface border border-border text-xs text-text-muted">

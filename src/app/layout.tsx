@@ -11,7 +11,7 @@ const geistSans = Geist({
 export const metadata: Metadata = {
   title: "Chisme CR - Experiencias Positivas en Costa Rica",
   description:
-    "Comparte y descubre experiencias positivas para conocer gente en Costa Rica. Filtra por provincia, cantón y distrito.",
+    "Comparte y descubre experiencias para conocer gente en Costa Rica. Filtra por provincia, cantón y distrito.",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
