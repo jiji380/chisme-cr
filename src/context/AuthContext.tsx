@@ -100,15 +100,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const register = async (email: string, password: string, seudonimo: string, nombre: string, apellidos: string, cedula: string) => {
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: { seudonimo, nombre, apellidos, cedula },
-      },
-    });
-    if (error) return { error: error.message };
-    return { error: null };
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: { seudonimo, nombre, apellidos, cedula },
+        },
+      });
+      if (error) {
+        return { error: error.message || error.status?.toString() || JSON.stringify(error) };
+      }
+      if (data?.user?.identities?.length === 0) {
+        return { error: "Este correo ya está registrado" };
+      }
+      return { error: null };
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : JSON.stringify(err);
+      return { error: message || "Error desconocido al registrar" };
+    }
   };
 
   const verifyOtp = async (email: string, token: string) => {

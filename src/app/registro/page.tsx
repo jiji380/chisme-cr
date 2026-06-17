@@ -54,7 +54,10 @@ export default function RegistroPage() {
       );
       setSubmitting(false);
     } else {
-      router.push(`/verificar-correo?email=${encodeURIComponent(email)}`);
+      // Sign out after registration - user needs admin approval
+      const { supabase } = await import("@/lib/supabase");
+      await supabase.auth.signOut();
+      router.push("/registro-exitoso");
     }
   };
 
