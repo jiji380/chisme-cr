@@ -14,6 +14,7 @@ interface AuthContextType {
   loading: boolean;
   login: (email: string, password: string) => Promise<{ error: string | null; needsVerification?: boolean }>;
   register: (email: string, password: string, seudonimo: string, nombre: string, apellidos: string, cedula: string) => Promise<{ error: string | null }>;
+  verifyOtp: (email: string, token: string) => Promise<{ error: string | null }>;
   logout: () => Promise<void>;
 }
 
@@ -27,6 +28,7 @@ const AuthContext = createContext<AuthContextType>({
   loading: true,
   login: async () => ({ error: null }),
   register: async () => ({ error: null }),
+  verifyOtp: async () => ({ error: null }),
   logout: async () => {},
 });
 
@@ -80,7 +82,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) return { error: error.message };
 
-    // Check if profile is verified by admin
     if (data.user) {
       const { data: profile } = await supabase
         .from("profiles")
@@ -89,7 +90,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .single();
 
       if (profile && !profile.is_verified && !profile.is_admin) {
-        // Sign out - they can't use the app yet
         await supabase.auth.signOut();
         setUser(null);
         return { error: null, needsVerification: true };
@@ -100,29 +100,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const register = async (email: string, password: string, seudonimo: string, nombre: string, apellidos: string, cedula: string) => {
-    const { data, error } = await supabase.auth.signUp({
+    const { error } = await supabase.auth.signUp({
       email,
       password,
       options: {
-        data: { seudonimo },
-        emailRedirectTo: `${window.location.origin}/login`,
+        data: { seudonimo, nombre, apellidos, cedula },
       },
     });
     if (error) return { error: error.message };
+    return { error: null };
+  };
 
-    if (data.user) {
-      await supabase.from("profiles").upsert({
-        id: data.user.id,
-        seudonimo,
-        email,
-        nombre,
-        apellidos,
-        cedula,
-        is_admin: false,
-        is_verified: false,
-      });
-    }
-
+  const verifyOtp = async (email: string, token: string) => {
+    const { error } = await supabase.auth.verifyOtp({
+      email,
+      token,
+      type: "email",
+    });
+    if (error) return { error: error.message };
+    // Sign out after verification — they still need admin approval
+    await supabase.auth.signOut();
+    setUser(null);
     return { error: null };
   };
 
@@ -146,6 +144,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         loading,
         login,
         register,
+        verifyOtp,
         logout,
       }}
     >

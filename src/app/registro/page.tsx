@@ -54,7 +54,7 @@ export default function RegistroPage() {
       );
       setSubmitting(false);
     } else {
-      router.push("/verificar-correo");
+      router.push(`/verificar-correo?email=${encodeURIComponent(email)}`);
     }
   };
 
